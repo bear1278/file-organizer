@@ -1,1 +1,5 @@
-package file_organizer
+package main
+
+func main() {
+
+}
