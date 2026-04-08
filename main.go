@@ -196,4 +196,5 @@ func main() {
 	}
 	fmt.Println(fileOrganizer.generateReport())
 	fmt.Println("Organizing if finished! details in organizer.log")
+
 }
