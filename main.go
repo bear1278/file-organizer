@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
+	"time"
 )
 
 const (
@@ -56,6 +59,30 @@ func (fo *FileOrganizer) Close() error {
 	if fo.logFile != nil {
 		return fo.logFile.Close()
 	}
+	return nil
+}
+
+func (fo *FileOrganizer) moveFile(sourcePath, targetDir string) error {
+	targetPath := filepath.Join(fo.sourceDir, targetDir)
+	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+		err = os.MkdirAll(targetPath, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+	fileName := filepath.Base(sourcePath)
+	ext := filepath.Ext(fileName)
+	targetPath = filepath.Join(targetPath, fileName)
+	if _, err := os.Stat(targetPath); os.IsExist(err) {
+		fileName = strings.TrimSuffix(fileName, ext) + "_" + time.Now().Format("2006-01-02_15-04-05") + ext
+		targetPath = filepath.Join(targetPath, fileName)
+	}
+	err := os.Rename(sourcePath, targetPath)
+	if err != nil {
+		fo.logError(err.Error())
+		return err
+	}
+	fo.logSuccess(fmt.Sprintf("Moved %s to %s", sourcePath, targetPath))
 	return nil
 }
 
