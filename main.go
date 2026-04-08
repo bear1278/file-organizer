@@ -82,16 +82,7 @@ func (fo *FileOrganizer) moveFile(sourcePath, targetDir string) error {
 		fileName = strings.TrimSuffix(fileName, ext) + "_" + time.Now().Format("2006-01-02_15-04-05") + ext
 		targetPath = filepath.Join(fo.sourceDir, targetDir, fileName)
 	}
-	fileInfo, err := os.Stat(sourcePath)
-	if err != nil {
-		err = fmt.Errorf("error file info %s: %w", sourcePath, err)
-		fo.logError(err.Error())
-		return err
-	}
-	fo.statistics[targetDir].Count++
-	fo.statistics[targetDir].Size += fileInfo.Size()
-	fo.totalSize += fileInfo.Size()
-	err = os.Rename(sourcePath, targetPath)
+	err := os.Rename(sourcePath, targetPath)
 	if err != nil {
 		err = fmt.Errorf("error of moving file %s to %s: %w", sourcePath, targetPath, err)
 		fo.logError(err.Error())
@@ -125,7 +116,15 @@ func (fo *FileOrganizer) Organize() error {
 		if err != nil {
 			return err
 		}
+		fileinfo, err := d.Info()
+		if err != nil {
+			return err
+		}
+		size := fileinfo.Size()
+		fo.totalSize += size
 		fo.processedFiles++
+		fo.statistics[targetDir].Size += size
+		fo.statistics[targetDir].Count++
 		return nil
 	})
 	return err
