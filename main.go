@@ -3,7 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
+)
+
+const (
+	LOG_FILE = "organizer.log"
 )
 
 var DefaultRules = map[string]string{
@@ -27,6 +32,31 @@ type FileOrganizer struct {
 	rulesMap       map[string]string
 	processedFiles int
 	logFile        *os.File
+}
+
+func (fo *FileOrganizer) initLog() error {
+	file, err := os.OpenFile(LOG_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		return err
+	}
+	fo.logFile = file
+	log.SetOutput(file)
+	return nil
+}
+
+func (fo *FileOrganizer) logSuccess(message string) {
+	log.Println("[SUCCESS] ", message)
+}
+
+func (fo *FileOrganizer) logError(message string) {
+	log.Println("[ERROR] ", message)
+}
+
+func (fo *FileOrganizer) Close() error {
+	if fo.logFile == nil {
+		return errors.New("log file is nil")
+	}
+	return fo.logFile.Close()
 }
 
 func NewFileOrganizer(sourceDir string) (*FileOrganizer, error) {
