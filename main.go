@@ -53,10 +53,10 @@ func (fo *FileOrganizer) logError(message string) {
 }
 
 func (fo *FileOrganizer) Close() error {
-	if fo.logFile == nil {
-		return errors.New("log file is nil")
+	if fo.logFile != nil {
+		return fo.logFile.Close()
 	}
-	return fo.logFile.Close()
+	return nil
 }
 
 func NewFileOrganizer(sourceDir string) (*FileOrganizer, error) {
