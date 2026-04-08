@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -170,7 +171,29 @@ func (fs *FileStats) String() string {
 }
 
 func main() {
-	for k, v := range DefaultRules {
-		fmt.Println(k, v)
+	fmt.Println("File Organizer")
+	fmt.Println("Enter path to organize (or click Enter to choose current directory): ")
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	input = strings.TrimSuffix(input, "\n")
+	if input == "" {
+		input, err = os.Getwd()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
+	fileOrganizer, err := NewFileOrganizer(input)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer fileOrganizer.Close()
+	err = fileOrganizer.Organize()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(fileOrganizer.generateReport())
+	fmt.Println("Organizing if finished! details in organizer.log")
 }
