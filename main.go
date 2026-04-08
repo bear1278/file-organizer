@@ -67,18 +67,21 @@ func (fo *FileOrganizer) moveFile(sourcePath, targetDir string) error {
 	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
 		err = os.MkdirAll(targetPath, os.ModePerm)
 		if err != nil {
+			err = fmt.Errorf("error of creating directory %s: %w", targetPath, err)
+			fo.logError(err.Error())
 			return err
 		}
 	}
 	fileName := filepath.Base(sourcePath)
 	ext := filepath.Ext(fileName)
 	targetPath = filepath.Join(targetPath, fileName)
-	if _, err := os.Stat(targetPath); os.IsExist(err) {
+	if _, err := os.Stat(targetPath); !os.IsNotExist(err) {
 		fileName = strings.TrimSuffix(fileName, ext) + "_" + time.Now().Format("2006-01-02_15-04-05") + ext
-		targetPath = filepath.Join(targetPath, fileName)
+		targetPath = filepath.Join(fo.sourceDir, targetDir, fileName)
 	}
 	err := os.Rename(sourcePath, targetPath)
 	if err != nil {
+		err = fmt.Errorf("error of moving file %s to %s: %w", sourcePath, targetPath, err)
 		fo.logError(err.Error())
 		return err
 	}
