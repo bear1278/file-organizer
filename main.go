@@ -123,8 +123,13 @@ func (fo *FileOrganizer) Organize() error {
 		size := fileinfo.Size()
 		fo.totalSize += size
 		fo.processedFiles++
-		fo.statistics[targetDir].Size += size
-		fo.statistics[targetDir].Count++
+		if value, ok := fo.statistics[targetDir]; ok {
+			value.Size += size
+			value.Count++
+		} else {
+			fo.statistics[targetDir] = &FileStats{Count: 1, Size: size}
+		}
+
 		return nil
 	})
 	return err
