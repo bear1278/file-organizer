@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"os"
+)
 
 var DefaultRules = map[string]string{
 	".jpg":  "Images",
@@ -16,6 +20,24 @@ var DefaultRules = map[string]string{
 	".avi":  "Video",
 	".zip":  "Archives",
 	".rar":  "Archives",
+}
+
+type FileOrganizer struct {
+	sourceDir      string
+	rulesMap       map[string]string
+	processedFiles int
+	logFile        *os.File
+}
+
+func NewFileOrganizer(sourceDir string) (*FileOrganizer, error) {
+	info, err := os.Stat(sourceDir)
+	if err != nil {
+		return nil, errors.New("Source directory does not exist")
+	}
+	if !info.IsDir() {
+		return nil, errors.New("Source directory is not a directory")
+	}
+	return &FileOrganizer{sourceDir: sourceDir, rulesMap: DefaultRules, processedFiles: 0, logFile: nil}, nil
 }
 
 func main() {
