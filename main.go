@@ -36,6 +36,8 @@ type FileOrganizer struct {
 	rulesMap       map[string]string
 	processedFiles int
 	logFile        *os.File
+	statistics     map[string]*FileStats
+	totalSize      int64
 }
 
 func (fo *FileOrganizer) initLog() error {
@@ -80,7 +82,16 @@ func (fo *FileOrganizer) moveFile(sourcePath, targetDir string) error {
 		fileName = strings.TrimSuffix(fileName, ext) + "_" + time.Now().Format("2006-01-02_15-04-05") + ext
 		targetPath = filepath.Join(fo.sourceDir, targetDir, fileName)
 	}
-	err := os.Rename(sourcePath, targetPath)
+	fileInfo, err := os.Stat(sourcePath)
+	if err != nil {
+		err = fmt.Errorf("error file info %s: %w", sourcePath, err)
+		fo.logError(err.Error())
+		return err
+	}
+	fo.statistics[targetDir].Count++
+	fo.statistics[targetDir].Size += fileInfo.Size()
+	fo.totalSize += fileInfo.Size()
+	err = os.Rename(sourcePath, targetPath)
 	if err != nil {
 		err = fmt.Errorf("error of moving file %s to %s: %w", sourcePath, targetPath, err)
 		fo.logError(err.Error())
@@ -120,6 +131,18 @@ func (fo *FileOrganizer) Organize() error {
 	return err
 }
 
+func (fo *FileOrganizer) generateReport() string {
+	builder := strings.Builder{}
+	builder.WriteString("=== File report ===")
+	builder.WriteString(fmt.Sprintf("Total size: %.2f\n", float64(fo.totalSize/1024)))
+	builder.WriteString(fmt.Sprintf("Total files: %d\n", fo.processedFiles))
+	for category, fileStats := range fo.statistics {
+		builder.WriteString(fmt.Sprintf("%s:\n", category))
+		builder.WriteString(fmt.Sprintf("%s\n", fileStats.String()))
+	}
+	return builder.String()
+}
+
 func NewFileOrganizer(sourceDir string) (*FileOrganizer, error) {
 	if sourceDir == "" {
 		return nil, errors.New("sourceDir is empty")
@@ -131,7 +154,16 @@ func NewFileOrganizer(sourceDir string) (*FileOrganizer, error) {
 	if !info.IsDir() {
 		return nil, errors.New("source directory is not a directory")
 	}
-	return &FileOrganizer{sourceDir: sourceDir, rulesMap: DefaultRules, processedFiles: 0, logFile: nil}, nil
+	return &FileOrganizer{sourceDir: sourceDir, rulesMap: DefaultRules, processedFiles: 0, logFile: nil, statistics: make(map[string]*FileStats), totalSize: 0}, nil
+}
+
+type FileStats struct {
+	Count int
+	Size  int64
+}
+
+func (fs *FileStats) String() string {
+	return fmt.Sprintf("Count: %d, Size: %.2f", fs.Count, float64(fs.Size/1024))
 }
 
 func main() {
