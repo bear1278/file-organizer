@@ -30,12 +30,15 @@ type FileOrganizer struct {
 }
 
 func NewFileOrganizer(sourceDir string) (*FileOrganizer, error) {
+	if sourceDir == "" {
+		return nil, errors.New("sourceDir is empty")
+	}
 	info, err := os.Stat(sourceDir)
 	if err != nil {
-		return nil, errors.New("Source directory does not exist")
+		return nil, errors.New("source directory does not exist")
 	}
 	if !info.IsDir() {
-		return nil, errors.New("Source directory is not a directory")
+		return nil, errors.New("source directory is not a directory")
 	}
 	return &FileOrganizer{sourceDir: sourceDir, rulesMap: DefaultRules, processedFiles: 0, logFile: nil}, nil
 }
